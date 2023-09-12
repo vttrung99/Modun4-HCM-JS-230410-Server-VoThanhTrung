@@ -1,0 +1,125 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("MDB_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model users {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  email        String         @unique
+  emailConfirm Boolean        @default(false)
+  userName     String         @unique
+  password     String
+  firstName    String
+  lastName     String
+  avatar       String         @default("https://www.slotcharter.net/wp-content/uploads/2020/02/no-avatar.png")
+  isActive     Boolean        @default(true)
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @default(now())
+  address      Address[]
+  isAdmin      Boolean        @default(false)
+  userReceipts userReceipts[]
+}
+
+type Address {
+  provinceId   Int
+  provinceName String
+  districtId   Int
+  districtName String
+  wardCode     String
+  wardName     String
+  title        String
+  id           String
+}
+
+model categories {
+  id       String     @id @default(auto()) @map("_id") @db.ObjectId
+  title    String     @unique
+  active   Boolean    @default(false)
+  avatar   String     @default("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7KoaBf3WfEy9DoNEp6nsnBHQffJNPOOY1XdoaHj9yaw&s")
+  products products[]
+}
+
+model products {
+  id                 String               @id @default(auto()) @map("_id") @db.ObjectId
+  name               String
+  avatar             String               @default("https://www.slotcharter.net/wp-content/uploads/2020/02/no-avatar.png")
+  price              Float
+  sell               Boolean              @default(true)
+  des                String
+  categoryId         String               @db.ObjectId
+  category           categories           @relation(fields: [categoryId], references: [id])
+  productPictures    productPictures[]
+  guestReceiptDetail guestReceiptDetail[]
+  userReceiptDetail  userReceiptDetail[]
+}
+
+model productPictures {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  path      String
+  productId String   @db.ObjectId
+  product   products @relation(fields: [productId], references: [id])
+}
+
+enum ReceiptState {
+  PENDING
+  ACCEPTED
+  SHIPPING
+  DONE
+}
+
+enum ReceiptPayMode {
+  ZALO
+  CASH
+}
+
+model userReceipts {
+  id                String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String              @db.ObjectId
+  user              users               @relation(fields: [userId], references: [id])
+  state             ReceiptState        @default(PENDING)
+  createAt          DateTime            @default(now())
+  acceptTime        DateTime?
+  shippingTime      DateTime?
+  doneTime          DateTime?
+  total             Float
+  payMode           ReceiptPayMode
+  paid              Boolean             @default(false)
+  userReceiptDetail userReceiptDetail[]
+}
+
+model guestReceipts {
+  id                 String               @id @default(auto()) @map("_id") @db.ObjectId
+  email              String
+  phoneNumber        String
+  state              ReceiptState         @default(PENDING)
+  createAt           DateTime             @default(now())
+  acceptTime         DateTime?
+  shippingTime       DateTime?
+  doneTime           DateTime?
+  total              Float
+  payMode            ReceiptPayMode
+  paid               Boolean              @default(false)
+  guestReceiptDetail guestReceiptDetail[]
+}
+
+model guestReceiptDetail {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  productId      String        @db.ObjectId
+  product        products      @relation(fields: [productId], references: [id])
+  quantity       Int
+  guestReceiptId String        @db.ObjectId
+  guestReceipt   guestReceipts @relation(fields: [guestReceiptId], references: [id])
+}
+
+model userReceiptDetail {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  productId     String       @db.ObjectId
+  product       products     @relation(fields: [productId], references: [id])
+  quantity      Int
+  userReceiptId String       @db.ObjectId
+  userReceipt   userReceipts @relation(fields: [userReceiptId], references: [id])
+}
